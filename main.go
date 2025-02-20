@@ -56,49 +56,94 @@ func main() {
 		Source string `json:"source"`
 		Target string `json:"target"`
 	}
-	type dataFormat struct {
+	type dataDAG struct {
 		Nodes []dataNode `json:"nodes"`
 		Edges []dataEdge `json:"edges"`
 	}
+	type dataRes struct {
+		DAG dataDAG `json:"dag"`
+	}
+	type dataState struct {
+		Resdata dataRes `json:"resdata"`
+	}
+	type dataFormat struct {
+		Type      string    `json:"type"`
+		StateData dataState `json:"state_data"`
+	}
 	go func() {
-		for i := 1; ; i++ {
+		for {
 			time.Sleep(2 * time.Second)
 			df := dataFormat{
-				Edges: []dataEdge{},
-			}
-			for j := 0; j < i; j++ {
-				dn := dataNode{
-					Id:    fmt.Sprintf("N%d", j),
-					Label: fmt.Sprintf("N%d", j),
-				}
-				df.Nodes = append(df.Nodes, dn)
-			}
+				Type: "state",
+				StateData: dataState{
+					Resdata: dataRes{
+						DAG: dataDAG{
+							Edges: []dataEdge{
+								{
+									Source: "active",
+									Target: "releasing",
+								},
+								{
+									Source: "releasing",
+									Target: "released",
+								},
 
-			for j := 1; j < i; j += 2 {
-				if j+1 < i {
-					n1 := fmt.Sprintf("N%d", j)
-					n2 := fmt.Sprintf("N%d", j+1)
-					ed := dataEdge{
-						Id:     fmt.Sprintf("%s%s", n1, n2),
-						Source: n1,
-						Target: n2,
-					}
-					df.Edges = append(df.Edges, ed)
-				}
-			}
-			for j := 1; j < i; j++ {
-				if j+1 < i {
+								{
+									Source: "releasing",
+									Target: "REL_NETWORK",
+								},
+								{
+									Source: "releasing",
+									Target: "POWER_OFF",
+								},
+								{
+									Source: "releasing",
+									Target: "POWER_OFF_VM",
+								},
 
-					n2 := fmt.Sprintf("N%d", j)
-					n1 := "N0"
-					ed := dataEdge{
-						Id:     fmt.Sprintf("%s%s", n1, n2),
-						Source: n1,
-						Target: n2,
-					}
-					df.Edges = append(df.Edges, ed)
-				}
+								{
+									Source: "REL_NETWORK",
+									Target: "POWER_OFF",
+								},
+								{
+									Source: "POWER_OFF",
+									Target: "POWER_OFF_VM",
+								},
+							},
+							Nodes: []dataNode{
+								{
+									Label: "active",
+									Id:    "active",
+								},
+
+								{
+									Label: "releasing",
+									Id:    "releasing",
+								},
+								{
+									Label: "released",
+									Id:    "released",
+								},
+
+								{
+									Label: "REL_NETWORK",
+									Id:    "REL_NETWORK",
+								},
+								{
+									Label: "POWER_OFF",
+									Id:    "POWER_OFF",
+								},
+								{
+									Label: "POWER_OFF_VM",
+									Id:    "POWER_OFF_VM",
+								},
+							},
+						},
+					},
+				},
 			}
+			// pp, _ := json.MarshalIndent(df, "", "  ")
+			// log.Printf("PP=%s", pp)
 			b, _ := json.Marshal(df)
 			dataToSend := fmt.Sprintf("%s", b)
 			// Send current time to clients message channel

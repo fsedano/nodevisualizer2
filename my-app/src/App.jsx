@@ -3,7 +3,8 @@ import ReactFlow, { MiniMap, Controls, Background, useNodesState, useEdgesState 
 import "reactflow/dist/style.css";
 import dagre from "dagre";
 
-const SSE_URL = "http://localhost:8085/stream"; // Change to your SSE endpoint
+//const SSE_URL = "http://10.51.52.152:8081/api/sse/resource_service/reservation/all/c013f9f0-d6b0-4b00-a720-ff627e15791d";
+const SSE_URL = "http://localhost:8085/stream";
 const graphLayout = new dagre.graphlib.Graph();
 graphLayout.setDefaultEdgeLabel(() => ({}));
 
@@ -28,12 +29,17 @@ const Graph = () => {
     const eventSource = new EventSource(SSE_URL);
     eventSource.onmessage = (event) => {
       console.log("event=%o", event)
-      const data = JSON.parse(event.data);
+      const eventJSON = JSON.parse(event.data)
+      if (eventJSON.type === "state") {
+      const data = eventJSON.state_data.resdata.dag;
       let updatedNodes = data.nodes.map((n) => ({ id: n.id, data: { label: n.label }, position: { x: 0, y: 0 } }));
       let updatedEdges = data.edges.map((e) => ({ id: e.id, source: e.source, target: e.target }));
       updatedNodes = getLayoutedElements(updatedNodes, updatedEdges);
       setNodes(updatedNodes);
       setEdges(updatedEdges);
+      } else {
+        console.log("Event type was %o ignoring", eventJSON.type)
+      }
     };
     return () => eventSource.close();
   }, []);
